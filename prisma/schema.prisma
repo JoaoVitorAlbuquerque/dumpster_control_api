@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+  USER
+
+  @@map("role")
+}
+
+enum Activity {
+  CLEANING
+  TREE
+  CONSTRUCTION
+  GROUND
+
+  @@map("activities")
+}
+
+enum Priority {
+  LOW
+  HIGH
+
+  @@map("priorities")
+}
+
+enum Status {
+  REQUESTED
+  UNDER_REVIEW
+  APPROVED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+
+  @@map("status")
+}
+
+model Account {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  cpf       String   @unique
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  isActive  Boolean  @default(true) @map("is_active")
+
+  refreshTokens RefreshToken[]
+  requests      Request[]
+  auditLogs     AuditLog[]
+
+  @@map("accounts")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  accountId String    @map("account_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  revokedAt DateTime? @map("revoked_at")
+  password  String
+  createdAt DateTime  @default(now()) @map("created_at")
+  expiresAt DateTime  @map("expires_at")
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@map("refresh_tokens")
+}
+
+model Request {
+  id               String    @id @default(uuid()) @db.Uuid
+  accountId        String    @map("account_id") @db.Uuid
+  protocol         String    @unique
+  cpf              String    @unique
+  address          String
+  latitude         Decimal   @db.Decimal(10, 7)
+  longitude        Decimal   @db.Decimal(10, 7)
+  name             String
+  contact          String
+  activity         Activity
+  priority         Priority  @default(LOW)
+  status           Status    @default(REQUESTED)
+  description      String
+  orderDate        DateTime  @default(now()) @map("order_date")
+  deliveryDate     DateTime? @map("delivery_date")
+  estimatedEndDate DateTime? @map("estimated_end_date")
+  completionDate   DateTime? @map("completion_date")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  isActive         Boolean   @default(true) @map("is_active")
+
+  account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  auditLogs AuditLog[]
+
+  @@index([cpf])
+  @@index([status])
+  @@index([priority])
+  @@map("requests")
+}
+
+model AuditLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  actorAccountId String?  @map("actor_account_id") @db.Uuid
+  entityId       String?  @map("entity_id") @db.Uuid
+  actorRole      Role?    @map("actor_role")
+  action         String
+  entity         String
+  ip             String?
+  userAgent      String?  @map("user_agent")
+  before         Json?
+  after          Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+  isActive       Boolean  @default(true) @map("is_active")
+
+  actorAccount  Account? @relation(fields: [actorAccountId], references: [id], onDelete: SetNull)
+  entityRequest Request? @relation(fields: [entityId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
