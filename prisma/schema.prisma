@@ -78,9 +78,9 @@ model RefreshToken {
 
 model Request {
   id               String    @id @default(uuid()) @db.Uuid
-  accountId        String    @map("account_id") @db.Uuid
+  accountId        String?   @map("account_id") @db.Uuid
   protocol         String    @unique
-  cpf              String    @unique
+  cpf              String
   address          String
   latitude         Decimal   @db.Decimal(10, 7)
   longitude        Decimal   @db.Decimal(10, 7)
@@ -98,7 +98,7 @@ model Request {
   updatedAt        DateTime  @updatedAt @map("updated_at")
   isActive         Boolean   @default(true) @map("is_active")
 
-  account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account   Account?   @relation(fields: [accountId], references: [id], onDelete: SetNull)
   auditLogs AuditLog[]
 
   @@index([cpf])
