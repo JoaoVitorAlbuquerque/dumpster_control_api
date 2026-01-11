@@ -7,10 +7,10 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
-import { Role } from '../entities/Role';
 import { ApiProperty } from '@nestjs/swagger';
+import { Role } from '../entities/Role';
 
-export class CreateAccountDto {
+export class SignupDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
