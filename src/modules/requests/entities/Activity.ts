@@ -1,0 +1,6 @@
+export enum Activity {
+  CLEANING = 'CLEANING',
+  TREE = 'TREE',
+  CONSTRUCTION = 'CONSTRUCTION',
+  GROUND = 'GROUND',
+}

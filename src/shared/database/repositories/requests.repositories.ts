@@ -11,7 +11,9 @@ export class RequestsRepository {
     return this.prismaService.request.create(createDto);
   }
 
-  findMany(findManyDto: Prisma.RequestFindManyArgs) {
+  findMany<T extends Prisma.RequestFindManyArgs>(
+    findManyDto: Prisma.SelectSubset<T, Prisma.RequestFindManyArgs>,
+  ) {
     return this.prismaService.request.findMany(findManyDto);
   }
 
@@ -21,6 +23,10 @@ export class RequestsRepository {
 
   findFirst(findFirstDto: Prisma.RequestFindFirstArgs) {
     return this.prismaService.request.findFirst(findFirstDto);
+  }
+
+  async count(args: Prisma.RequestCountArgs) {
+    return this.prismaService.request.count(args);
   }
 
   update(updateDto: Prisma.RequestUpdateArgs) {

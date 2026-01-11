@@ -8,7 +8,13 @@ import { RequestsModule } from './modules/requests/requests.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 
 @Module({
-  imports: [AccountsModule, DatabaseModule, AuthModule, RequestsModule, AuditLogsModule],
+  imports: [
+    AccountsModule,
+    DatabaseModule,
+    AuthModule,
+    RequestsModule,
+    AuditLogsModule,
+  ],
   controllers: [],
   providers: [
     {

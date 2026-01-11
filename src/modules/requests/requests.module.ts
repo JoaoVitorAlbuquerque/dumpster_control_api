@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { RequestsService } from './requests.service';
 import { RequestsController } from './requests.controller';
+import { ValidateUserRoleService } from './validate-user-role.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 @Module({
   controllers: [RequestsController],
-  providers: [RequestsService],
+  providers: [RequestsService, ValidateUserRoleService, AuditLogsService],
 })
 export class RequestsModule {}
