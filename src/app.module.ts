@@ -6,6 +6,7 @@ import { AuthGuard } from './modules/auth/auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { RequestsModule } from './modules/requests/requests.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
+import { QueuesModule } from './queues/queues.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
     AuthModule,
     RequestsModule,
     AuditLogsModule,
+    QueuesModule,
   ],
   controllers: [],
   providers: [

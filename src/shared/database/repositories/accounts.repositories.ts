@@ -18,4 +18,8 @@ export class AccountsRepository {
   findFirst(findFirstDto: Prisma.AccountFindFirstArgs) {
     return this.prismaService.account.findFirst(findFirstDto);
   }
+
+  update(updateDto: Prisma.AccountUpdateArgs) {
+    return this.prismaService.account.update(updateDto);
+  }
 }
