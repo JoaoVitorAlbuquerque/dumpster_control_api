@@ -43,6 +43,12 @@ enum Status {
   @@map("status")
 }
 
+enum GeocodeStatus {
+  PENDING
+  DONE
+  FAILED
+}
+
 model Account {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
@@ -77,19 +83,29 @@ model RefreshToken {
 }
 
 model Request {
-  id               String    @id @default(uuid()) @db.Uuid
-  accountId        String?   @map("account_id") @db.Uuid
-  protocol         String    @unique
-  cpf              String
-  address          String
-  latitude         Decimal   @db.Decimal(10, 7)
-  longitude        Decimal   @db.Decimal(10, 7)
-  name             String
-  contact          String
-  activity         Activity
-  priority         Priority  @default(LOW)
-  status           Status    @default(REQUESTED)
-  description      String
+  id          String   @id @default(uuid()) @db.Uuid
+  accountId   String?  @map("account_id") @db.Uuid
+  protocol    String   @unique
+  cpf         String
+  address     String
+  latitude    Decimal? @db.Decimal(10, 7)
+  longitude   Decimal? @db.Decimal(10, 7)
+  name        String
+  contact     String
+  activity    Activity
+  priority    Priority @default(LOW)
+  status      Status   @default(REQUESTED)
+  description String
+
+  addressFormatted String?       @map("address_formatted")
+  geocodeStatus    GeocodeStatus @default(PENDING) @map("geocode_status")
+  geocodeProvider  String?       @map("geocode_provider")
+  geocodeRelevance Float?        @map("geocode_relevance")
+  geocodedAt       DateTime?     @map("geocoded_at")
+  geocodeError     String?       @map("geocode_error")
+
+  insideCity Boolean? @map("inside_city")
+
   orderDate        DateTime  @default(now()) @map("order_date")
   deliveryDate     DateTime? @map("delivery_date")
   estimatedEndDate DateTime? @map("estimated_end_date")

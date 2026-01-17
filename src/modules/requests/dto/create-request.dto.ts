@@ -4,7 +4,6 @@ import {
   IsDateString,
   IsEnum,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
   MaxLength,
@@ -27,17 +26,17 @@ export class CreateRequestDto {
   @IsNotEmpty()
   address: string;
 
-  @ApiProperty()
-  @IsNumber({ maxDecimalPlaces: 7 })
-  @IsNotEmpty()
-  // @MaxLength(11)
-  latitude: number;
+  // @ApiProperty()
+  // @IsNumber({ maxDecimalPlaces: 7 })
+  // @IsNotEmpty()
+  // // @MaxLength(11)
+  // latitude: number;
 
-  @ApiProperty()
-  @IsNumber({ maxDecimalPlaces: 7 })
-  @IsNotEmpty()
-  // @MaxLength(11)
-  longitude: number;
+  // @ApiProperty()
+  // @IsNumber({ maxDecimalPlaces: 7 })
+  // @IsNotEmpty()
+  // // @MaxLength(11)
+  // longitude: number;
 
   @ApiProperty()
   @IsString()

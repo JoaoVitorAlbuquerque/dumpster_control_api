@@ -6,6 +6,7 @@ import { UpdateRequestDto } from './dto/update-request.dto';
 import { RequestsRepository } from 'src/shared/database/repositories/requests.repositories';
 import { ValidateUserRoleService } from './validate-user-role.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { GeocodeQueue } from 'src/queues/geocode.queue';
 
 @Injectable()
 export class RequestsService {
@@ -13,6 +14,7 @@ export class RequestsService {
     private readonly requestsRepo: RequestsRepository,
     private readonly validateUserRoleService: ValidateUserRoleService,
     private readonly auditLogsService: AuditLogsService,
+    private readonly geocodeQueue: GeocodeQueue,
   ) {}
 
   async create(userId: string, createRequestDto: CreateRequestDto, req?: any) {
@@ -23,6 +25,12 @@ export class RequestsService {
         accountId: userId,
         protocol,
         ...createRequestDto,
+
+        latitude: null,
+        longitude: null,
+        addressFormatted: null,
+        geocodeStatus: 'PENDING',
+        insideCity: null,
       },
     });
 
@@ -36,7 +44,19 @@ export class RequestsService {
       after: request,
     });
 
-    return request;
+    // enfileira geocode
+    await this.geocodeQueue.enqueue(request.id, request.address);
+
+    return {
+      id: request.id,
+      protocol: request.protocol,
+      status: request.status,
+      priority: request.priority,
+      address: request.address,
+      geocodeStatus: request.geocodeStatus, // PENDING
+      insideCity: request.insideCity, // null
+      location: null,
+    };
   }
 
   async createPublic(createRequestDto: CreateRequestDto, req?: any) {
@@ -46,6 +66,12 @@ export class RequestsService {
       data: {
         protocol,
         ...createRequestDto,
+
+        latitude: null,
+        longitude: null,
+        addressFormatted: null,
+        geocodeStatus: 'PENDING',
+        insideCity: null,
       },
     });
 
@@ -59,7 +85,18 @@ export class RequestsService {
       after: request,
     });
 
-    return request;
+    await this.geocodeQueue.enqueue(request.id, request.address);
+
+    return {
+      id: request.id,
+      protocol: request.protocol,
+      status: request.status,
+      priority: request.priority,
+      address: request.address,
+      geocodeStatus: request.geocodeStatus,
+      insideCity: request.insideCity,
+      location: null,
+    };
   }
 
   async findAll(
