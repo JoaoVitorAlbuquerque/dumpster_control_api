@@ -15,6 +15,7 @@ import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { ActiveUserId } from 'src/shared/decorators/ActiveUserId';
 import { IsPublic } from 'src/shared/decorators/IsPublic';
+import { Status } from './entities/Status';
 
 @Controller('requests')
 export class RequestsController {
@@ -40,12 +41,19 @@ export class RequestsController {
     @ActiveUserId() userId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('status') status?: Status,
+    @Query('accountId') accountId?: string,
     @Query('page') page = '1',
     @Query('limit') limit = '10',
   ) {
+    const parsedAccountId =
+      accountId === 'null' || accountId === '' ? null : accountId;
+
     return this.requestsService.findAll(userId, {
       startDate,
       endDate,
+      status,
+      accountId: parsedAccountId,
       page: parseInt(page),
       limit: parseInt(limit),
     });

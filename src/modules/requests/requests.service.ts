@@ -7,6 +7,7 @@ import { RequestsRepository } from 'src/shared/database/repositories/requests.re
 import { ValidateUserRoleService } from './validate-user-role.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { GeocodeQueue } from 'src/queues/geocode.queue';
+import { Status } from './entities/Status';
 
 @Injectable()
 export class RequestsService {
@@ -104,6 +105,8 @@ export class RequestsService {
     filters: {
       startDate?: string;
       endDate?: string;
+      status?: Status;
+      accountId?: string | null;
       page: number;
       limit: number;
     },
@@ -113,13 +116,32 @@ export class RequestsService {
     const start = filters.startDate ? new Date(filters.startDate) : undefined;
 
     const end = filters.endDate ? new Date(filters.endDate) : undefined;
+    if (end) end.setHours(23, 59, 59, 999);
 
-    const where = {
-      orderDate: {
-        gte: start,
-        lt: end,
-      },
+    // const where = {
+    //   orderDate: {
+    //     gte: start,
+    //     lt: end,
+    //   },
+    //   status: filters.status,
+    //   accountId: filters.accountId,
+    //   isActive: true,
+    // };
+
+    const where: any = {
       isActive: true,
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.accountId !== undefined
+        ? { accountId: filters.accountId }
+        : {}),
+      ...(start || end
+        ? {
+            orderDate: {
+              ...(start ? { gte: start } : {}),
+              ...(end ? { lte: end } : {}),
+            },
+          }
+        : {}),
     };
 
     const [data, totalCount] = await Promise.all([
@@ -187,6 +209,14 @@ export class RequestsService {
       where: { id: requestId, isActive: true },
       data: {
         ...updateRequestDto,
+        deliveryDate:
+          updateRequestDto.status === 'DELIVERED'
+            ? new Date()
+            : (before?.deliveryDate ?? null),
+        completionDate:
+          updateRequestDto.status === 'COMPLETED'
+            ? new Date()
+            : (before?.completionDate ?? null),
         updatedAt: new Date(),
       },
     });
