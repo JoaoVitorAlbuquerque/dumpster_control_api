@@ -193,6 +193,44 @@ export class RequestsService {
     });
   }
 
+  async findDeliveredForMap() {
+    const rows = await this.requestsRepo.findMany({
+      where: {
+        status: 'DELIVERED',
+        isActive: true,
+        latitude: { not: null },
+        longitude: { not: null },
+        geocodeStatus: 'DONE',
+      },
+      select: {
+        id: true,
+        protocol: true,
+        addressFormatted: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        deliveryDate: true,
+        activity: true,
+        priority: true,
+        name: true,
+        contact: true,
+      },
+      orderBy: { deliveryDate: 'desc' },
+    });
+
+    // Devolve em formato “map-friendly”
+    return rows.map((r) => ({
+      id: r.id,
+      protocol: r.protocol,
+      title: r.addressFormatted ?? r.address,
+      lat: r.latitude,
+      lng: r.longitude,
+      deliveryDate: r.deliveryDate,
+      activity: r.activity,
+      priority: r.priority,
+    }));
+  }
+
   async update(
     accountId: string,
     requestId: string,

@@ -80,6 +80,11 @@ export class RequestsController {
     return this.requestsService.findAllRequestsByUser();
   }
 
+  @Get('map/delivered')
+  findDeliveredForMap() {
+    return this.requestsService.findDeliveredForMap();
+  }
+
   @Patch(':requestId')
   update(
     @ActiveUserId() accountId: string,
