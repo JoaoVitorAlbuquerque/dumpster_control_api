@@ -1,6 +1,7 @@
 import { customAlphabet } from 'nanoid';
-
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { RequestsRepository } from 'src/shared/database/repositories/requests.repositories';
@@ -8,6 +9,7 @@ import { ValidateUserRoleService } from './validate-user-role.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { GeocodeQueue } from 'src/queues/geocode.queue';
 import { Status } from './entities/Status';
+import { PrismaService } from 'src/shared/database/prisma.service';
 
 @Injectable()
 export class RequestsService {
@@ -16,6 +18,7 @@ export class RequestsService {
     private readonly validateUserRoleService: ValidateUserRoleService,
     private readonly auditLogsService: AuditLogsService,
     private readonly geocodeQueue: GeocodeQueue,
+    private readonly prismaService: PrismaService,
   ) {}
 
   async create(userId: string, createRequestDto: CreateRequestDto, req?: any) {
@@ -229,6 +232,128 @@ export class RequestsService {
       activity: r.activity,
       priority: r.priority,
     }));
+  }
+
+  async getAnalytics(filters: {
+    startDate?: string;
+    endDate?: string;
+    bucket: 'day' | 'week' | 'month';
+  }) {
+    const start = filters.startDate ? new Date(filters.startDate) : undefined;
+    const end = filters.endDate ? new Date(filters.endDate) : undefined;
+
+    const where: any = {
+      isActive: true,
+      ...(start || end
+        ? {
+            createdAt: {
+              ...(start ? { gte: start } : {}),
+              ...(end ? { lt: end } : {}),
+            },
+          }
+        : {}),
+    };
+
+    // Summary
+    const [total, byStatus, byPriority, byActivity] = await Promise.all([
+      this.requestsRepo.count({ where }),
+      this.prismaService.request.groupBy({
+        by: ['status'],
+        where,
+        _count: { _all: true },
+      }),
+      this.prismaService.request.groupBy({
+        by: ['priority'],
+        where,
+        _count: { _all: true },
+      }),
+      this.prismaService.request.groupBy({
+        by: ['activity'],
+        where,
+        _count: { _all: true },
+      }),
+    ]);
+
+    const statusMap = new Map<string, number>(
+      byStatus.map((x) => [x.status, x._count._all]),
+    );
+    const open =
+      (statusMap.get('REQUESTED') ?? 0) +
+      (statusMap.get('UNDER_REVIEW') ?? 0) +
+      (statusMap.get('APPROVED') ?? 0);
+
+    const delivered = statusMap.get('DELIVERED') ?? 0;
+    const completed = statusMap.get('COMPLETED') ?? 0;
+    const cancelled = statusMap.get('CANCELLED') ?? 0;
+
+    // Série temporal (Postgres)
+    // const bucketSql =
+    //   filters.bucket === 'month'
+    //     ? 'month'
+    //     : filters.bucket === 'week'
+    //       ? 'week'
+    //       : 'day';
+
+    const bucketSql =
+      filters.bucket === 'month'
+        ? Prisma.sql`'month'`
+        : filters.bucket === 'week'
+          ? Prisma.sql`'week'`
+          : Prisma.sql`'day'`;
+
+    //   SELECT
+    const timeSeries = await this.prismaService.$queryRaw<
+      Array<{ date: string; created: number; delivered: number }>
+    >(Prisma.sql`
+      SELECT
+        to_char(date_trunc(${bucketSql}, "created_at"), 'YYYY-MM-DD') AS "date",
+        COUNT(*)::int AS "created",
+        COUNT(*) FILTER (WHERE "status" = 'DELIVERED')::int AS "delivered"
+      FROM "requests"
+      WHERE "is_active" = true
+      ${start ? Prisma.sql`AND "created_at" >= ${start}` : Prisma.empty}
+      ${end ? Prisma.sql`AND "created_at" < ${end}` : Prisma.empty}
+      GROUP BY 1
+      ORDER BY 1 ASC
+    `);
+
+    // SLA médio (em horas)
+    const sla = await this.prismaService.$queryRaw<
+      Array<{
+        avg_to_deliver_hours: number | null;
+        avg_to_complete_hours: number | null;
+      }>
+    >(Prisma.sql`
+      SELECT
+        AVG(EXTRACT(EPOCH FROM ("delivery_date" - "order_date")) / 3600.0) AS "avg_to_deliver_hours",
+        AVG(EXTRACT(EPOCH FROM ("completion_date" - "order_date")) / 3600.0) AS "avg_to_complete_hours"
+      FROM "requests"
+      WHERE "is_active" = true
+        AND "order_date" IS NOT NULL
+        ${start ? Prisma.sql`AND "created_at" >= ${start}` : Prisma.empty}
+        ${end ? Prisma.sql`AND "created_at" < ${end}` : Prisma.empty}
+    `);
+
+    return {
+      summary: { total, open, delivered, completed, cancelled },
+      byStatus: byStatus.map((x) => ({
+        status: x.status,
+        count: x._count._all,
+      })),
+      byPriority: byPriority.map((x) => ({
+        priority: x.priority,
+        count: x._count._all,
+      })),
+      byActivity: byActivity.map((x) => ({
+        activity: x.activity,
+        count: x._count._all,
+      })),
+      timeSeries,
+      sla: {
+        avgToDeliverHours: sla[0]?.avg_to_deliver_hours ?? null,
+        avgToCompleteHours: sla[0]?.avg_to_complete_hours ?? null,
+      },
+    };
   }
 
   async update(

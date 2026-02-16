@@ -85,6 +85,15 @@ export class RequestsController {
     return this.requestsService.findDeliveredForMap();
   }
 
+  @Get('analytics')
+  findAnalytics(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('bucket') bucket: 'day' | 'week' | 'month' = 'day',
+  ) {
+    return this.requestsService.getAnalytics({ startDate, endDate, bucket });
+  }
+
   @Patch(':requestId')
   update(
     @ActiveUserId() accountId: string,

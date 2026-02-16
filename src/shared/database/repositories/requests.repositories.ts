@@ -29,6 +29,10 @@ export class RequestsRepository {
     return this.prismaService.request.count(args);
   }
 
+  // async groupBy(args: Prisma.RequestGroupByArgs) {
+  //   return this.prismaService.request.groupBy(args);
+  // }
+
   update(updateDto: Prisma.RequestUpdateArgs) {
     return this.prismaService.request.update(updateDto);
   }
