@@ -13,6 +13,7 @@ import { CityGeoService } from 'src/shared/geo/city-geo.service';
       connection: {
         host: process.env.REDIS_HOST,
         port: Number(process.env.REDIS_PORT),
+        password: process.env.REDIS_PASSWORD,
       },
     }),
     // registra as filas
