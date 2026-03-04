@@ -1,24 +1,27 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
+// import * as nodemailer from 'nodemailer';
 @Processor('mail')
 export class MailProcessor extends WorkerHost {
-  private transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: Number(process.env.SMTP_PORT) === 465,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  });
+  private resend = new Resend(process.env.RESEND_API_KEY);
+
+  // private transporter = nodemailer.createTransport({
+  //   host: process.env.SMTP_HOST,
+  //   port: Number(process.env.SMTP_PORT),
+  //   secure: Number(process.env.SMTP_PORT) === 465,
+  //   auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  // });
 
   async process(job: Job) {
-    const from = process.env.SMTP_FROM;
+    const from = process.env.EMAIL_FROM;
 
     console.log('MAIL JOB:', job.name, job.data.to);
 
     if (job.name === 'password-reset') {
       const { to, name, link } = job.data;
-      await this.transporter.sendMail({
+      await this.resend.emails.send({
         from,
         to,
         subject: 'Redefinição de senha',
@@ -33,7 +36,7 @@ export class MailProcessor extends WorkerHost {
 
     if (job.name === 'welcome') {
       const { to, name } = job.data;
-      await this.transporter.sendMail({
+      await this.resend.emails.send({
         from,
         to,
         subject: 'Bem-vindo',

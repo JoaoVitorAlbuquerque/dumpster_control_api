@@ -72,6 +72,11 @@ export class AuthService {
 
     const accessToken = await this.generateAccessToken(account.id);
 
+    await this.mailQueue.sendWelcomeEmail({
+      to: account.email,
+      name: account.name,
+    });
+
     return { accessToken };
   }
 
