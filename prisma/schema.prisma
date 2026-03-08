@@ -87,6 +87,7 @@ model Request {
   accountId   String?  @map("account_id") @db.Uuid
   protocol    String   @unique
   cpf         String
+  email       String?
   address     String
   latitude    Decimal? @db.Decimal(10, 7)
   longitude   Decimal? @db.Decimal(10, 7)

@@ -18,4 +18,14 @@ export class MailQueue {
   sendWelcomeEmail(data: { to: string; name: string }) {
     return this.queue.add('welcome', data, { attempts: 3 });
   }
+
+  sendNewRequestEmail(data: {
+    to: string;
+    name: string;
+    protocol: string;
+    rules: string[];
+    activity: string;
+  }) {
+    return this.queue.add('new-request', data, { attempts: 3 });
+  }
 }

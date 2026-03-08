@@ -1,6 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Resend } from 'resend';
+import { buildRequestEmail } from 'src/shared/emails/build-request-email';
 
 // import * as nodemailer from 'nodemailer';
 @Processor('mail')
@@ -41,6 +42,25 @@ export class MailProcessor extends WorkerHost {
         to,
         subject: 'Bem-vindo',
         html: `<p>Olá, ${name}! Sua conta foi criada com sucesso.</p>`,
+      });
+    }
+
+    if (job.name === 'new-request') {
+      const { to, name, protocol, activity, rules } = job.data;
+
+      const html = buildRequestEmail({
+        name,
+        protocol,
+        activity,
+        rules,
+        statusUrl: `${process.env.FRONT_URL}/consult-protocol`,
+      });
+
+      await this.resend.emails.send({
+        from,
+        to,
+        subject: `Solicitação registrada - Protocolo ${protocol}`,
+        html,
       });
     }
 

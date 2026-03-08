@@ -13,8 +13,10 @@ export class MapboxService {
     const token = process.env.MAPBOX_TOKEN;
     if (!token) throw new Error('MAPBOX_TOKEN não configurado');
 
+    const city = 'Moreira Sales Parana';
+
     const url =
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json` +
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(city)}/${encodeURIComponent(address)}.json` +
       `?access_token=${token}&country=BR&limit=1&language=pt`;
 
     const res = await fetch(url);

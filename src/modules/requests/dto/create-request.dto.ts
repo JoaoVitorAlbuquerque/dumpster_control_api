@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsDateString,
+  IsEmail,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -20,6 +21,12 @@ export class CreateRequestDto {
   @MaxLength(11)
   @IsNotEmpty()
   cpf: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
 
   @ApiProperty()
   @IsString()

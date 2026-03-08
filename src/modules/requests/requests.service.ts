@@ -10,6 +10,8 @@ import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { GeocodeQueue } from 'src/queues/geocode.queue';
 import { Status } from './entities/Status';
 import { PrismaService } from 'src/shared/database/prisma.service';
+import { MailQueue } from 'src/queues/mail.queue';
+import { getActivityRules } from 'src/shared/utils/get-activity-rules';
 
 @Injectable()
 export class RequestsService {
@@ -18,6 +20,7 @@ export class RequestsService {
     private readonly validateUserRoleService: ValidateUserRoleService,
     private readonly auditLogsService: AuditLogsService,
     private readonly geocodeQueue: GeocodeQueue,
+    private mailQueue: MailQueue,
     private readonly prismaService: PrismaService,
   ) {}
 
@@ -90,6 +93,16 @@ export class RequestsService {
     });
 
     await this.geocodeQueue.enqueue(request.id, request.address);
+
+    const rules = getActivityRules(request.activity);
+
+    await this.mailQueue.sendNewRequestEmail({
+      to: request.email,
+      name: request.name,
+      protocol: request.protocol,
+      activity: request.activity,
+      rules,
+    });
 
     return {
       id: request.id,
