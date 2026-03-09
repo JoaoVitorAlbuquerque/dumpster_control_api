@@ -1,6 +1,7 @@
 import { customAlphabet } from 'nanoid';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { startOfYear, endOfYear } from 'date-fns';
 
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
@@ -12,6 +13,7 @@ import { Status } from './entities/Status';
 import { PrismaService } from 'src/shared/database/prisma.service';
 import { MailQueue } from 'src/queues/mail.queue';
 import { getActivityRules } from 'src/shared/utils/get-activity-rules';
+import { AbuseReportResult } from './types/requests.types';
 
 @Injectable()
 export class RequestsService {
@@ -366,6 +368,78 @@ export class RequestsService {
         avgToDeliverHours: sla[0]?.avg_to_deliver_hours ?? null,
         avgToCompleteHours: sla[0]?.avg_to_complete_hours ?? null,
       },
+    };
+  }
+
+  async getAbuseReport(year: number): Promise<AbuseReportResult> {
+    const start = startOfYear(new Date(year, 0, 1));
+    const end = endOfYear(new Date(year, 0, 1));
+    const ignoredStatuses = ['CANCELLED', 'UNDER_REVIEW'];
+
+    // Agrupamentos
+    const suspiciousCPFs = await this.prismaService.request.groupBy({
+      by: ['cpf'],
+      where: {
+        orderDate: { gte: start, lte: end },
+        status: { notIn: ignoredStatuses as any[] },
+      },
+      _count: { id: true },
+      having: { cpf: { _count: { gt: 6 } } },
+    });
+
+    const suspiciousAddresses = await this.prismaService.request.groupBy({
+      by: ['addressFormatted'],
+      where: {
+        orderDate: { gte: start, lte: end },
+        status: { notIn: ignoredStatuses as any[] },
+        addressFormatted: { not: null },
+      },
+      _count: { id: true },
+      having: { addressFormatted: { _count: { gt: 4 } } },
+    });
+
+    // Detalhamentos
+    const [cpfDetails, addressDetails] = await Promise.all([
+      this.requestsRepo.findMany({
+        where: {
+          cpf: { in: suspiciousCPFs.map((s) => s.cpf) },
+          orderDate: { gte: start, lte: end },
+          isActive: true,
+        },
+        include: { account: { select: { name: true, email: true } } },
+        orderBy: { orderDate: 'desc' },
+      }),
+      this.requestsRepo.findMany({
+        where: {
+          addressFormatted: {
+            in: suspiciousAddresses.map((s) => s.addressFormatted!),
+          },
+          orderDate: { gte: start, lte: end },
+          isActive: true,
+        },
+        include: { account: { select: { name: true, email: true } } },
+        orderBy: { orderDate: 'desc' },
+      }),
+    ]);
+
+    return {
+      rankingCpf: suspiciousCPFs
+        .map((s) => ({
+          cpf: s.cpf,
+          total: s._count.id,
+          requests: cpfDetails.filter((r) => r.cpf === s.cpf) as any,
+        }))
+        .sort((a, b) => b.total - a.total),
+
+      rankingAddress: suspiciousAddresses
+        .map((s) => ({
+          address: s.addressFormatted!,
+          total: s._count.id,
+          requests: addressDetails.filter(
+            (r) => r.addressFormatted === s.addressFormatted,
+          ) as any,
+        }))
+        .sort((a, b) => b.total - a.total),
     };
   }
 

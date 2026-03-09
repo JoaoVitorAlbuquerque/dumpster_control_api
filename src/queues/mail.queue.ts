@@ -28,4 +28,8 @@ export class MailQueue {
   }) {
     return this.queue.add('new-request', data, { attempts: 3 });
   }
+
+  sendAlertAbuseRequestEmail(data: { alertReasons: string[] }) {
+    return this.queue.add('alert-abuse-request', data, { attempts: 3 });
+  }
 }

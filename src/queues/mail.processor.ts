@@ -64,6 +64,23 @@ export class MailProcessor extends WorkerHost {
       });
     }
 
+    if (job.name === 'alert-abuse-request') {
+      const { alertReasons } = job.data;
+      await this.resend.emails.send({
+        from,
+        to: from, // to Modificar para destinatário real quando definido
+        subject: '⚠️ ALERTA: Abuso de Solicitação de Caçamba',
+        html: `
+          <h2>Alerta Automático de Fiscalização</h2>
+          <p>O sistema detectou uma nova solicitação que ultrapassa os limites anuais permitidos:</p>
+          <ul>
+            ${alertReasons.map((r) => `<li>${r}</li>`).join('')}
+          </ul>
+          <p>Por favor, acesse o painel administrativo para avaliar se a solicitação deve ser aprovada, cancelada ou se uma multa deve ser emitida.</p>
+        `,
+      });
+    }
+
     console.log(`Email job "${job.name}" processed for ${job.data.to}`);
 
     return { ok: true };
