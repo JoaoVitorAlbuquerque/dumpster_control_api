@@ -56,6 +56,16 @@ export class RequestsService {
     // enfileira geocode
     await this.geocodeQueue.enqueue(request.id, request.address);
 
+    const rules = getActivityRules(request.activity);
+
+    await this.mailQueue.sendNewRequestEmail({
+      to: request.email,
+      name: request.name,
+      protocol: request.protocol,
+      activity: request.activity,
+      rules,
+    });
+
     return {
       id: request.id,
       protocol: request.protocol,
