@@ -68,7 +68,7 @@ export class MailProcessor extends WorkerHost {
       const { alertReasons } = job.data;
       await this.resend.emails.send({
         from,
-        to: from, // to Modificar para destinatário real quando definido
+        to: 'joao.albuquerque139@al.unieduk.com.br', // to Modificar para destinatário real quando definido
         subject: '⚠️ ALERTA: Abuso de Solicitação de Caçamba',
         html: `
           <h2>Alerta Automático de Fiscalização</h2>
