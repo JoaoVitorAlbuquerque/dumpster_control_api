@@ -25,7 +25,8 @@ export class CreateRequestDto {
   @ApiProperty()
   @IsString()
   @IsEmail()
-  @IsNotEmpty()
+  // @IsNotEmpty()
+  @IsOptional()
   email: string;
 
   @ApiProperty()
