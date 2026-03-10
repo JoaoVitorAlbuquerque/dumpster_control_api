@@ -145,25 +145,39 @@ export function buildRequestEmail({
   </td>
   </tr>
 
-  <!-- INFORMAÇÕES -->
+  <!-- ALERTA -->
   <tr>
-  <td>
+  <td style="padding-top:15px;">
 
-  <h3 style="margin:0 0 10px 0;font-size:18px;">
-  Informações importantes
-  </h3>
+  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+  <tr>
+  <td style="
+  background:#FFF4E5;
+  border-left:4px solid #F5A623;
+  padding:14px;
+  font-family:Arial, Helvetica, sans-serif;
+  ">
 
-  <p style="font-size:14px;color:#444;line-height:22px;margin:0 0 8px;">
-  • Utilize a caçamba apenas para o tipo de resíduo selecionado.
+  <p style="margin:0 0 8px 0;font-size:15px;font-weight:bold;color:#B54708;">
+  ⚠️ Atenção!
   </p>
 
-  <p style="font-size:14px;color:#444;line-height:22px;margin:0 0 8px;">
-  • Não descarte lixo doméstico ou materiais perigosos.
+  <p style="margin:0 0 10px 0;font-size:14px;color:#444;line-height:22px;">
+  Não é permitido o descarte de materiais como: 
+  <strong>papelão, plástico, roupas, calçados, tecidos, latas, vidros, arames, ferro, PVC e demais recicláveis.</strong>
   </p>
 
-  <p style="font-size:14px;color:#444;line-height:22px;margin:0 0 8px;">
-  • Guarde o número do protocolo para acompanhar sua solicitação.
+  <p style="margin:0 0 10px 0;font-size:14px;font-weight:bold;color:#C0392B;">
+  NÃO PODEM TER MISTURA DE RESÍDUOS NA MESMA CAÇAMBA
   </p>
+
+  <p style="margin:0;font-size:14px;color:#2E7D32;">
+  ✅ Contamos com a colaboração de todos para manter a cidade limpa, organizada e ambientalmente responsável.
+  </p>
+
+  </td>
+  </tr>
+  </table>
 
   </td>
   </tr>
