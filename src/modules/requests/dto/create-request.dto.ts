@@ -25,6 +25,12 @@ export class CreateRequestDto {
   @IsString()
   // @IsEmail()
   @IsString()
+<<<<<<< HEAD
+=======
+  @IsEmail()
+  // @IsNotEmpty()
+  @IsOptional()
+>>>>>>> 5d157c68dd25401cf0723a64f96d6932c35d436f
   email: string;
 
   @ApiProperty()
