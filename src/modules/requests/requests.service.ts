@@ -56,15 +56,17 @@ export class RequestsService {
     // enfileira geocode
     await this.geocodeQueue.enqueue(request.id, request.address);
 
-    const rules = getActivityRules(request.activity);
+    if (request.email) {
+      const rules = getActivityRules(request.activity);
 
-    await this.mailQueue.sendNewRequestEmail({
-      to: request.email,
-      name: request.name,
-      protocol: request.protocol,
-      activity: request.activity,
-      rules,
-    });
+      await this.mailQueue.sendNewRequestEmail({
+        to: request.email,
+        name: request.name,
+        protocol: request.protocol,
+        activity: request.activity,
+        rules,
+      });
+    }
 
     return {
       id: request.id,
@@ -106,15 +108,17 @@ export class RequestsService {
 
     await this.geocodeQueue.enqueue(request.id, request.address);
 
-    const rules = getActivityRules(request.activity);
+    if (request.email) {
+      const rules = getActivityRules(request.activity);
 
-    await this.mailQueue.sendNewRequestEmail({
-      to: request.email,
-      name: request.name,
-      protocol: request.protocol,
-      activity: request.activity,
-      rules,
-    });
+      await this.mailQueue.sendNewRequestEmail({
+        to: request.email,
+        name: request.name,
+        protocol: request.protocol,
+        activity: request.activity,
+        rules,
+      });
+    }
 
     return {
       id: request.id,
@@ -451,6 +455,23 @@ export class RequestsService {
         }))
         .sort((a, b) => b.total - a.total),
     };
+  }
+
+  async listApprovedRequests() {
+    return this.requestsRepo.findMany({
+      where: { status: 'APPROVED', isActive: true },
+      orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
+      select: {
+        id: true,
+        protocol: true,
+        addressFormatted: true,
+        activity: true,
+        priority: true,
+        name: true,
+        contact: true,
+        description: true,
+      },
+    });
   }
 
   async update(
