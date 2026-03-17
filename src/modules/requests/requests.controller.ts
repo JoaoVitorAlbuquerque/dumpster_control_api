@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import * as PDFDocument from 'pdfkit';
+import * as ExcelJS from 'exceljs';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -124,9 +125,15 @@ export class RequestsController {
 
   @Get('approved/pdf')
   @Header('Content-Type', 'application/pdf')
-  @Header('Content-Disposition', 'attachment; filename="vehicles.pdf"')
-  async generateApprovedRequestsPdf(@Res() res: Response) {
-    const approvedRequests = await this.requestsService.listApprovedRequests();
+  @Header('Content-Disposition', 'attachment; filename="requests.pdf"')
+  async generateApprovedRequestsPdf(
+    @Res() res: Response,
+    @Query('ids') ids?: string,
+  ) {
+    const idList = ids ? ids.split(',') : undefined;
+
+    const approvedRequests =
+      await this.requestsService.listApprovedRequests(idList);
 
     // 1. Inicializa o documento com "bufferPages" para permitir a paginação no final
     const doc = new PDFDocument({
@@ -341,6 +348,100 @@ export class RequestsController {
     }
 
     doc.end();
+  }
+
+  @Get('export/excel')
+  @Header(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
+  @Header(
+    'Content-Disposition',
+    'attachment; filename=relatorio-solicitacoes.xlsx',
+  )
+  async exportRequestsExcel(@Query() filters, @Res() res) {
+    const { data } = await this.findAll(filters);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Solicitações');
+
+    worksheet.columns = [
+      { header: 'PROTOCOLO', key: 'protocol', width: 20 },
+      { header: 'DATA PEDIDO', key: 'orderDate', width: 20 },
+      { header: 'DATA ENTREGA', key: 'deliveryDate', width: 20 },
+      { header: 'DATA FINALIZAÇÃO', key: 'completionDate', width: 20 },
+      { header: 'ENDEREÇO', key: 'addressFormatted', width: 40 },
+      { header: 'CPF', key: 'cpf', width: 20 },
+      { header: 'NOME', key: 'name', width: 30 },
+      { header: 'CONTATO', key: 'contact', width: 20 },
+      { header: 'ACTIVIDADE', key: 'activity', width: 25 },
+      { header: 'STATUS', key: 'status', width: 25 },
+      { header: 'PRIORIDADE', key: 'priority', width: 25 },
+      { header: 'DESCRIÇÃO', key: 'description', width: 40 },
+    ];
+
+    data.forEach((r) => {
+      worksheet.addRow({
+        protocol: r.protocol || '-',
+        orderDate: r.orderDate || '-',
+        deliveryDate: r.deliveryDate || '-',
+        completionDate: r.completionDate || '-',
+        addressFormatted: r.addressFormatted || '-',
+        cpf: r.cpf || '-',
+        name: r.name || '-',
+        contact: r.contact || '-',
+        activity:
+          r.activity === 'TREE'
+            ? 'Árvore'
+            : r.activity === 'CONSTRUCTION'
+              ? 'Construção'
+              : r.activity === 'GROUND'
+                ? 'Terra'
+                : r.activity === 'CLEANING'
+                  ? 'Limpeza'
+                  : '-',
+        status:
+          r.status === 'REQUESTED'
+            ? 'Solicitado'
+            : r.status === 'UNDER_REVIEW'
+              ? 'Em Análise'
+              : r.status === 'APPROVED'
+                ? 'Aprovado'
+                : r.status === 'DELIVERED'
+                  ? 'Entregue'
+                  : r.status === 'COMPLETED'
+                    ? 'Finalizado'
+                    : r.status === 'CANCELLED'
+                      ? 'Cancelado'
+                      : '-',
+        priority: r.priority === 'HIGH' ? 'Alta' : 'Baixa',
+        description: r.description || '-',
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+
+    worksheet.columns.forEach((column) => {
+      column.alignment = { vertical: 'middle', horizontal: 'left' };
+    });
+
+    await workbook.xlsx.write(res);
+
+    res.end();
+  }
+
+  @Get('export/pdf')
+  @Header('Content-Type', 'application/pdf')
+  async generateSelectedRequestsPdf(
+    @ActiveUserId() userId: string,
+    @Query('ids') ids: string,
+    @Res() res: Response,
+  ) {
+    const idList = ids ? ids.split(',') : [];
+    const requests = await this.requestsService.findManyByIds(userId, idList);
+    // reutilize a mesma lógica de geração de PDF que você já tem
+    // só mude os dados de entrada de "approvedRequests" para "requests"
+    await this.requestsService.generatePdf(requests, res);
   }
 
   @Patch(':requestId')
